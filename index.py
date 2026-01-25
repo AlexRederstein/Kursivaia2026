@@ -11,8 +11,6 @@ root = tk.Tk()
 
 root.title("Панель управления базой данных")
 root.geometry("1000x600")
-style = ttk.Style()
-style.theme_use("vista")
 root.minsize(width=600, height=400)
 
 # Компоненты
