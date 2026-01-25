@@ -27,7 +27,10 @@ def setTextArea(container, title = ''):
 
 def open_create_frame(data = False):
     window = tk.Toplevel()
-    window.title("Создание новой записи")
+    if data:
+        window.title("Редактирование записи")
+    else:
+        window.title("Создание новой записи")
     window.minsize(width=400, height=650)
     window.grab_set()
 
