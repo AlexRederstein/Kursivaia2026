@@ -1,11 +1,8 @@
 import tkinter as tk
-from tkinter import Frame, Button
-from tkinter import ttk
 
 from components.header import header 
 from components.body import body 
 from components.footer import footer 
-
 
 root = tk.Tk()
 

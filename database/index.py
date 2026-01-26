@@ -1,28 +1,44 @@
 import psycopg2
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 def connect():
     conn = psycopg2.connect(
-        host="localhost",
-        database="postgres",
-        user="root",
-        password="root",
-        port="5432"
+        host=os.getenv('DATABASE_HOST'),
+        database=os.getenv('DATABASE_NAME'),
+        user=os.getenv('DATABASE_USER'),
+        password=os.getenv('DATABASE_PASSWORD'),
+        port=os.getenv('DATABASE_PORT')
     )
 
     return conn
 
 def getAllArticles():
+    conn = None
     try:
-        conn = connect()
-        cur = conn.cursor()
+        if(os.getenv('DEBUG')):
+            res = [
+                ('0', 'Заголовок', 'Описание', 'Текст'),
+                ('1', 'Заголовок1', 'Описание1', 'Текст1'),
+                ('2', 'Заголовок2', 'Описание2', 'Текст2'),
+                ('3', 'Заголовок3', 'Описание3', 'Текст3'),
+            ]
+            return res
+        else:
+            conn = connect()
+            cur = conn.cursor()
 
-        cur.execute("SELECT * FROM articles;")
-        return cur.fetchall()
+            cur.execute("SELECT * FROM articles;")
+            return cur.fetchall()
     
     except Exception as e:
         print(f"Ошибка! {e}")
     finally:
         if conn is not None:
+            print('Запрос завершен')
             conn.close()
 
 def pushData(data):
@@ -56,7 +72,6 @@ def updateData(data, id):
             UPDATE articles SET title = %s, description = %s, text = %s WHERE article_key = %s;
             """
         
-        # values = tuple(data.values())
         cur.execute(query, (data['title'], data['description'], data['text'], id))
         conn.commit()
 

@@ -11,8 +11,6 @@ def header():
     # search.pack(side=LEFT)
     create.pack(side=LEFT)
     # user.pack(side=RIGHT)
-    frame.pack(side=TOP, fill=X)
-
-
+    frame.pack(side=TOP, fill=X, padx=5, pady=(5, 0))
 
     return frame
