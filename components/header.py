@@ -1,16 +1,27 @@
-from tkinter import Frame, Button, LEFT, TOP, RIGHT, X
-from tkinter.ttk import Style
-from components.createFrame import open_create_frame
+import tkinter as tk
+from components.createWindow import CreateWindow
+from components.searchWindow import SearchWindow
+from components.registrationWindow import RegistrationWindow
 
+class Header(tk.Frame):
+    def __init__(self, master=None, callback=None):
+        super().__init__(master)
+        self.master = master
+        self.callback = callback
 
-def header():
-    frame = Frame()
-    search = Button(frame, text="Открыть статью...")
-    create = Button(frame, text="Создать статью...", command=lambda: open_create_frame())
-    user = Button(frame, text="Пользователь")
-    # search.pack(side=LEFT)
-    create.pack(side=LEFT)
-    # user.pack(side=RIGHT)
-    frame.pack(side=TOP, fill=X, padx=5, pady=(5, 0))
+        search = tk.Button(self, text="Поиск статей...", command=lambda: SearchWindow(self.master))
+        create = tk.Button(self, text="Создать статью...", command= lambda: CreateWindow(self.master))
+        update = tk.Button(self, text="Обновить таблицу", command= lambda: self.updateRows())
 
-    return frame
+        label = tk.Label(self, text=f"{self.master.role}: {self.master.name}")
+
+        if(self.master.role == 'root'):
+            tk.Button(self, text="Добавить пользователя...", command=lambda: RegistrationWindow(self)).pack(side=tk.RIGHT)
+
+        search.pack(side=tk.LEFT)
+        create.pack(side=tk.LEFT)
+        update.pack(side=tk.LEFT)
+        label.pack(side=tk.RIGHT)
+
+    def updateRows(self):
+        self.master.body.getAllRows()

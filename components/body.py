@@ -1,67 +1,108 @@
-from tkinter import Frame, Button, BOTH, LEFT, RIGHT, Y, X, CENTER, W, Label, Text, WORD, END, BOTTOM
-from tkinter.ttk import Treeview, Scrollbar, Style
-from database.index import getAllArticles, getArticle, deleteArticle
-from components.createFrame import open_create_frame
-from textwrap import dedent
-from components.table import table
-from components.info_frame import info_frame
+import tkinter as tk
+from components.table import Table
+from components.info import Info
+from database.index import DBManager
+from components.createWindow import CreateWindow
+from tkinter import messagebox 
 
-row_id = None
+class Body(tk.Frame):
+    def __init__(self, master=None, callback=None):
+        super().__init__(master=master)
+        self.master = master
+        self.callback = callback
 
-def body():
+        self.columnconfigure(0, weight=1, uniform="equal")
+        self.columnconfigure(1, weight=1, uniform="equal")
+        self.rowconfigure(0, weight=1)
 
-    frame = Frame()
-    frame.pack(expand=True, fill=BOTH)
-    frame.columnconfigure(0, weight=1, uniform="equal")
-    frame.columnconfigure(1, weight=1, uniform="equal")
-    frame.rowconfigure(0, weight=1)
+        self.table = Table(master=self, callback=self.getRow)
+        self.table.grid(row=0, column=0, sticky="nsew")
+        self.table.bind("<Double-1>", lambda event: self.getRow(event))
 
-    articles = table(frame)
-    articles.getAllRows()
+        self.info_frame = Info(master=self)
+        self.info_frame.grid(row=0, column=1, sticky="nsew")
+        
 
-    info = info_frame(frame)
-    info.grid(row=0, column=1, sticky="nsew", padx=(0, 5), pady=5)
+        
+        if self.master.role == 'root':
+            self.getAllRows()
+        else:
+            service = DBManager()
+            rows = service.getAll(id=self.master.user_id)
+            self.getAllRows(rows=rows)
 
-    return frame
 
-    # def on_select(event):
-    #     selection = articles.selection()
-    #     if selection:
-    #         item_id = selection[0]
+    def getAllRows(self, rows=None):
+
+        self.info_frame.textarea.config(state="normal")
+        self.info_frame.textarea.delete('1.0', 'end')
+        self.info_frame.textarea.config(state="disabled")
+
+        self.info_frame.delete.config(state="disabled")
+        self.info_frame.edit.config(state="disabled")
+
+        self.table.delete(*self.table.get_children())
+        
+        if rows:
+
+            for index, item in enumerate(rows):
+                self.table.insert(
+                    "", 
+                    "end", 
+                    text=str(item['article_key']),
+                    values=(
+                        index + 1,
+                        item['title'],
+                        item['description'],
+                        item['creation_date']
+                    )
+                )
+        else:
+            service = DBManager()
+            data = service.getAll()
+            if data:
+                self.info_frame.textarea.config(state="normal")
+                self.info_frame.textarea.delete('1.0', 'end')
+                self.info_frame.textarea.config(state="disabled")
+                self.table.delete(*self.table.get_children())
+
+                for index, item in enumerate(data):
+                    self.table.insert(
+                        "", 
+                        "end", 
+                        text=str(item['article_key']),
+                        values=(
+                            index + 1,
+                            item['title'],
+                            item['description'],
+                            item['creation_date']
+                        )
+                    )
             
-    #         global row_id
-    #         row_id = articles.item(item_id)["text"]
-    #         print(row_id)
-    #         res = getArticle(str(row_id))
-    #         if res:
-    #             info_text.config(state='normal')
-    #             info_text.delete("1.0", END)
-    #             article = dedent(f"""
-    #                             Заголовок: {res[5]}
-    #                             Описание: {res[2]}
-    #                             Текст статьи: {res[1]}
-    #                             Дата публикации: {res[3]}
-    #                             """)
-    #             update.config(command=lambda: open_create_frame(res))
-    #             info_text.insert("1.0", article)
-    #             info_text.config(state='disabled') 
-                
-            
-    
-    # articles.bind("<ButtonRelease-1>", on_select)
-    # flowRows(articles)
+        
+    def getRow(self, event):
+        selection = self.table.selection()[0]
+        if selection:
+            self.info_frame.row_id = self.table.item(selection)["text"]
+            service = DBManager()
+            row = service.getRow(self.info_frame.row_id)
+            self.info_frame.dataFlow(row[0])
 
-    
+            self.info_frame.delete.config(state="normal")
+            self.info_frame.edit.config(state="normal")
+            self.info_frame.delete.config(command=lambda: self.deleteRow(event=event))
+            self.info_frame.edit.config(command=lambda: self.editRow(row=row[0]))
 
+    def editRow(self, row):
+        CreateWindow(master = self.master, data = row)
 
-# def flowRows(table):
-#     data = getAllArticles()
-#     table.delete(*table.get_children())
-#     if data:
-#         for index, row in enumerate(data):
-#             table.insert("", "end", text=str(row[0]), values=(index+1, row[5], row[2], row[3]))
-#     else:
-#         return False
-
-# def pullArticle(article):
-#     pass
+    def deleteRow(self, event):
+        confirm = messagebox.askyesno(title="Подтверждение", message="Вы действительно хотите удалить статью?")
+        if confirm:
+            service = DBManager()
+            res = service.delete(self.info_frame.row_id)
+            if res:
+                messagebox.showinfo(title="Инфо", message="Статья была удалена")
+                self.getAllRows()
+        else:
+            return
